@@ -39,7 +39,7 @@ async function createCampaign({
 
     return getCampaignById(id);
   } catch (error) {
-    console.error("Failed to create campaign:", error.message);
+    console.error("Failed to create campaign:", error.stack || error);
     throw error;
   }
 }
@@ -57,7 +57,7 @@ async function getCampaignById(id) {
 
     return mapCampaignRow(row);
   } catch (error) {
-    console.error("Failed to load campaign:", error.message);
+    console.error("Failed to load campaign:", error.stack || error);
     return null;
   }
 }
@@ -74,7 +74,7 @@ async function listCampaigns() {
 
     return rows.map(mapCampaignRow);
   } catch (error) {
-    console.error("Failed to list campaigns:", error.message);
+    console.error("Failed to list campaigns:", error.stack || error);
     return [];
   }
 }
@@ -89,8 +89,9 @@ async function setCampaignStatus(id, status) {
       `,
       [status, id]
     );
+    console.log(`[campaign ${id}] DB update status=${status}`);
   } catch (error) {
-    console.error("Failed to update campaign status:", error.message);
+    console.error("Failed to update campaign status:", error.stack || error);
   }
 }
 
@@ -105,8 +106,9 @@ async function incrementCampaignSent(id) {
       `,
       [id]
     );
+    console.log(`[campaign ${id}] DB update sent=sent+1`);
   } catch (error) {
-    console.error("Failed to increment campaign sent count:", error.message);
+    console.error("Failed to increment campaign sent count:", error.stack || error);
   }
 }
 
@@ -120,10 +122,11 @@ async function incrementCampaignFailed(id) {
       `,
       [id]
     );
+    console.log(`[campaign ${id}] DB update failed=failed+1`);
 
     await updateCampaignCompletion(id);
   } catch (error) {
-    console.error("Failed to increment campaign failed count:", error.message);
+    console.error("Failed to increment campaign failed count:", error.stack || error);
   }
 }
 
@@ -137,10 +140,11 @@ async function incrementCampaignDelivered(id) {
       `,
       [id]
     );
+    console.log(`[campaign ${id}] DB update delivered=delivered+1`);
 
     await updateCampaignCompletion(id);
   } catch (error) {
-    console.error("Failed to increment campaign delivered count:", error.message);
+    console.error("Failed to increment campaign delivered count:", error.stack || error);
   }
 }
 

@@ -38,6 +38,10 @@ app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.status(200).send("Server running");
+});
+
 app.use("/campaign", campaignRouter);
 app.use("/send-test", sendTestRouter);
 app.use("/webhook", webhookRouter);
@@ -47,6 +51,7 @@ if (fs.existsSync(frontendDistPath)) {
 
   app.get("*", (req, res, next) => {
     if (
+      req.path === "/" ||
       req.path.startsWith("/campaign") ||
       req.path.startsWith("/send-test") ||
       req.path.startsWith("/webhook")
@@ -55,10 +60,6 @@ if (fs.existsSync(frontendDistPath)) {
     }
 
     return res.sendFile(path.join(frontendDistPath, "index.html"));
-  });
-} else {
-  app.get("/", (req, res) => {
-    res.json({ status: "ok", message: "Server is running" });
   });
 }
 

@@ -55,7 +55,7 @@ function receiveWebhook(req, res) {
           );
         }
       } catch (error) {
-        console.error("Webhook status update error:", error.message);
+        console.error("Webhook status update error:", error.stack || error);
       }
     }
   });

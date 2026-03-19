@@ -32,7 +32,7 @@ function enqueueCampaignMessages({ campaignId, templateName, languageCode, rows 
   );
 
   processQueue().catch((error) => {
-    console.error("Queue processor failed:", error);
+    console.error("Queue processor failed:", error.stack || error);
   });
 }
 
@@ -77,9 +77,7 @@ async function processQueue() {
       });
 
       console.log(
-        `[campaign ${item.campaignId}] sent to ${item.phoneNumber} on attempt ${
-          item.attempt + 1
-        }`
+        `[campaign ${item.campaignId}] message sent phone=${item.phoneNumber} message_id=${messageId || "unknown"} attempt=${item.attempt + 1}`
       );
     } catch (error) {
       if (item.attempt < RETRY_LIMIT) {
@@ -125,6 +123,11 @@ async function processQueue() {
           } attempt(s)`
         );
       }
+
+      console.error(
+        `[campaign ${item.campaignId}] send error for ${item.phoneNumber}:`,
+        error.stack || error
+      );
     }
 
     const campaign = await getCampaignById(item.campaignId);
@@ -144,7 +147,7 @@ async function processQueue() {
 
   if (queue.length > 0) {
     processQueue().catch((error) => {
-      console.error("Queue processor failed:", error);
+      console.error("Queue processor failed:", error.stack || error);
     });
   }
 }

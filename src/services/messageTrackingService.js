@@ -27,7 +27,7 @@ async function registerTrackedMessage({
 
     return getTrackedMessageById(messageId);
   } catch (error) {
-    console.error("Failed to register tracked message:", error.message);
+    console.error("Failed to register tracked message:", error.stack || error);
     return null;
   }
 }
@@ -43,7 +43,7 @@ async function getTrackedMessageById(messageId) {
       [messageId]
     );
   } catch (error) {
-    console.error("Failed to load tracked message:", error.message);
+    console.error("Failed to load tracked message:", error.stack || error);
     return null;
   }
 }
@@ -89,7 +89,7 @@ async function updateTrackedMessageStatus({
 
     return getTrackedMessageById(messageId);
   } catch (error) {
-    console.error("Failed to update tracked message status:", error.message);
+    console.error("Failed to update tracked message status:", error.stack || error);
     return null;
   }
 }
@@ -113,7 +113,7 @@ async function getMessageStatusEvents(messageId) {
       [messageId]
     );
   } catch (error) {
-    console.error("Failed to load message status events:", error.message);
+    console.error("Failed to load message status events:", error.stack || error);
     return [];
   }
 }

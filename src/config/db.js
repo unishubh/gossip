@@ -1,21 +1,18 @@
+const fs = require("fs");
 const path = require("path");
-const sqlite3 = require("sqlite3").verbose();
+const Database = require("better-sqlite3");
 
-const databasePath = path.join(process.cwd(), "gossip.db");
+const dataDirectory = path.join(process.cwd(), "data");
+const databasePath = path.join(dataDirectory, "gossip.db");
 
-const db = new sqlite3.Database(databasePath, (error) => {
-  if (error) {
-    console.error("SQLite connection error:", error.message);
-    return;
-  }
+if (!fs.existsSync(dataDirectory)) {
+  fs.mkdirSync(dataDirectory);
+}
 
-  console.log(`SQLite connected: ${databasePath}`);
-});
+const db = new Database(databasePath);
 
-db.run("PRAGMA foreign_keys = ON", (error) => {
-  if (error) {
-    console.error("SQLite pragma error:", error.message);
-  }
-});
+db.pragma("foreign_keys = ON");
+
+console.log(`SQLite connected: ${databasePath}`);
 
 module.exports = db;

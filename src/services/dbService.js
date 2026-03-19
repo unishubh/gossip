@@ -1,39 +1,40 @@
 const db = require("../config/db");
 
 function run(query, params = []) {
-  return new Promise((resolve, reject) => {
-    db.run(query, params, function onRun(error) {
-      if (error) {
-        console.error("SQLite run error:", error.message, { query, params });
-        reject(error);
-        return;
-      }
+  try {
+    const result = db.prepare(query).run(params);
 
-      resolve({
-        lastID: this.lastID,
-        changes: this.changes
-      });
-    });
-  });
+    return {
+      lastInsertRowid: result.lastInsertRowid,
+      changes: result.changes
+    };
+  } catch (error) {
+    console.error("SQLite run error:", error.stack || error, { query, params });
+    throw error;
+  }
 }
 
 function get(query, params = []) {
-  return new Promise((resolve, reject) => {
-    db.get(query, params, (error, row) => {
-      if (error) {
-        console.error("SQLite get error:", error.message, { query, params });
-        reject(error);
-        return;
-      }
-
-      resolve(row || null);
-    });
-  });
+  try {
+    return db.prepare(query).get(params) || null;
+  } catch (error) {
+    console.error("SQLite get error:", error.stack || error, { query, params });
+    throw error;
+  }
 }
 
-async function initDatabase() {
+function all(query, params = []) {
   try {
-    await run(`
+    return db.prepare(query).all(params) || [];
+  } catch (error) {
+    console.error("SQLite all error:", error.stack || error, { query, params });
+    throw error;
+  }
+}
+
+function initDatabase() {
+  try {
+    db.exec(`
       CREATE TABLE IF NOT EXISTS campaigns (
         id TEXT PRIMARY KEY,
         template_name TEXT,
@@ -44,10 +45,8 @@ async function initDatabase() {
         delivered INTEGER DEFAULT 0,
         failed INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
+      );
 
-    await run(`
       CREATE TABLE IF NOT EXISTS messages (
         id TEXT PRIMARY KEY,
         campaign_id TEXT,
@@ -56,10 +55,8 @@ async function initDatabase() {
         retry_count INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (campaign_id) REFERENCES campaigns(id)
-      )
-    `);
+      );
 
-    await run(`
       CREATE TABLE IF NOT EXISTS message_status_events (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         message_id TEXT,
@@ -68,43 +65,29 @@ async function initDatabase() {
         raw_payload TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (message_id) REFERENCES messages(id)
-      )
+      );
     `);
 
-    await ensureColumnExists("campaigns", "queued", "INTEGER DEFAULT 0");
+    ensureColumnExists("campaigns", "queued", "INTEGER DEFAULT 0");
   } catch (error) {
-    console.error("Database initialization error:", error.message);
+    console.error("Database initialization error:", error.stack || error);
   }
 }
 
-async function ensureColumnExists(tableName, columnName, definition) {
+function ensureColumnExists(tableName, columnName, definition) {
   try {
-    const columns = await all(`PRAGMA table_info(${tableName})`);
+    const columns = all(`PRAGMA table_info(${tableName})`);
     const exists = columns.some((column) => column.name === columnName);
 
     if (!exists) {
-      await run(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
+      run(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
     }
   } catch (error) {
-    console.error("SQLite schema check error:", error.message, {
+    console.error("SQLite schema check error:", error.stack || error, {
       tableName,
       columnName
     });
   }
-}
-
-function all(query, params = []) {
-  return new Promise((resolve, reject) => {
-    db.all(query, params, (error, rows) => {
-      if (error) {
-        console.error("SQLite all error:", error.message, { query, params });
-        reject(error);
-        return;
-      }
-
-      resolve(rows || []);
-    });
-  });
 }
 
 module.exports = {

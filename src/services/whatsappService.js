@@ -150,7 +150,7 @@ async function sendWhatsAppMessage(payload) {
       body: JSON.stringify(requestBody)
     });
   } catch (error) {
-    console.error("WhatsApp API transport error:", error.message);
+    console.error("WhatsApp API transport error:", error.stack || error);
     throw new WhatsAppApiError("Failed to reach WhatsApp API", {
       statusCode: 502,
       details: {
