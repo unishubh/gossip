@@ -1,6 +1,6 @@
 # Gossip
 
-Campaign-based bulk messaging system in Node.js using Express and the WhatsApp Cloud API.
+Campaign-based bulk messaging system in Node.js using Express and the WhatsApp Cloud API..
 
 ## Features
 
