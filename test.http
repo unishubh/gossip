@@ -1,0 +1,42 @@
+### Send test WhatsApp message
+POST http://localhost:3000/send-test
+Content-Type: application/json
+
+{
+  "to": "919580174041",
+  "type": "template",
+  "templateName": "seminar_feedback",
+  "languageCode": "en_US",
+  "components": [
+    {
+      "type": "body",
+      "parameters": [
+        { "type": "text", "text": "Riya" },
+        { "type": "text", "text": "visit" },
+        { "type": "text", "text": "Mar 19, 2026" },
+        { "type": "text", "text": "5" }
+      ]
+    }
+  ]
+}
+
+
+
+### Upload CSV campaign
+POST http://localhost:3000/campaign
+Content-Type: multipart/form-data; boundary=CampaignBoundary
+
+--CampaignBoundary
+Content-Disposition: form-data; name="file"; filename="test.csv"
+Content-Type: text/csv
+
+< ./test.csv
+--CampaignBoundary
+Content-Disposition: form-data; name="templateName"
+
+seminar_feedback
+--CampaignBoundary
+Content-Disposition: form-data; name="languageCode"
+
+en_US
+--CampaignBoundary--
