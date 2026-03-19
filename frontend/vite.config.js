@@ -5,12 +5,7 @@ export default defineConfig({
   plugins: [react()],
   root: ".",
   server: {
-    port: 5173,
-    proxy: {
-      "/campaign": "http://localhost:3000",
-      "/send-test": "http://localhost:3000",
-      "/webhook": "http://localhost:3000"
-    }
+    port: 5173
   },
   build: {
     outDir: "dist",

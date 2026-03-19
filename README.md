@@ -109,25 +109,24 @@ The UI is designed for non-technical operators and includes:
 - `Send test message`: validate a template with dynamic parameter fields before bulk sending
 - `Start campaign`: upload a CSV, choose the template, and launch a campaign in one flow
 - `Monitor campaign`: paste a campaign ID or jump directly from campaign creation to a live status view
-- Runtime API connection settings: leave empty for same-origin deploys, or point to another backend URL without rebuilding
 
 Frontend development URL:
 
 - `http://localhost:5173`
 
-## Production UI Connection
+## Frontend Deployment On Vercel
 
-The frontend now resolves API calls like this:
+The frontend is configured to call the Railway backend directly:
 
-1. Same-origin by default
-   When the built UI is served by the same Express backend, no URL change is needed.
+- `https://gossip-production-5ef5.up.railway.app`
 
-2. Runtime override from the UI
-   Use the `API settings` control in the app header to set a custom backend base URL such as `https://api.example.com`.
-   This is stored in browser local storage and does not require rebuilding the frontend.
+Deploy the `frontend/` app on Vercel with the standard Vite settings:
 
-3. Optional runtime injection
-   You can also set `window.__GOSSIP_CONFIG__.apiBaseUrl` before the app bundle loads if you want to inject the backend URL at deploy time.
+1. Set the project root to `frontend`
+2. Build command: `npm run build`
+3. Output directory: `dist`
+
+No frontend rebuild-time environment variable is required for the backend URL because it is defined in [frontend/src/config.js](/Users/shubham.shukla/Documents/gossip/frontend/src/config.js).
 
 ## Environment Variables
 

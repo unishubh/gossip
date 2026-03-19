@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import BASE_URL from "./config";
 
 const defaultTestParam = () => ({ id: crypto.randomUUID(), value: "" });
 const pollingIntervalMs = 4000;
-const apiBaseUrlStorageKey = "gossip_api_base_url";
 
 function getStatusTone(status) {
   switch (status) {
@@ -63,31 +63,9 @@ function formatDate(value) {
   }).format(date);
 }
 
-function getInitialApiBaseUrl() {
-  const runtimeConfigUrl =
-    typeof window !== "undefined" ? window.__GOSSIP_CONFIG__?.apiBaseUrl : "";
-  const savedUrl =
-    typeof window !== "undefined"
-      ? window.localStorage.getItem(apiBaseUrlStorageKey) || ""
-      : "";
-
-  return (runtimeConfigUrl || savedUrl || "").trim();
-}
-
-function resolveApiUrl(pathname, apiBaseUrl) {
-  if (!apiBaseUrl) {
-    return pathname;
-  }
-
-  return new URL(pathname, apiBaseUrl.endsWith("/") ? apiBaseUrl : `${apiBaseUrl}/`).toString();
-}
-
 function App() {
   const [activeView, setActiveView] = useState("campaigns");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [apiBaseUrl, setApiBaseUrl] = useState(getInitialApiBaseUrl);
-  const [apiBaseUrlInput, setApiBaseUrlInput] = useState(getInitialApiBaseUrl);
-  const [showApiSettings, setShowApiSettings] = useState(false);
   const [testForm, setTestForm] = useState({
     to: "",
     templateName: "",
@@ -143,42 +121,23 @@ function App() {
     }
   }, [activeView]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    if (apiBaseUrl) {
-      window.localStorage.setItem(apiBaseUrlStorageKey, apiBaseUrl);
-    } else {
-      window.localStorage.removeItem(apiBaseUrlStorageKey);
-    }
-  }, [apiBaseUrl]);
-
   async function requestJson(url, options) {
-    const response = await fetch(resolveApiUrl(url, apiBaseUrl), options);
+    const requestUrl = `${BASE_URL}${url}`;
+    const response = await fetch(requestUrl, options);
     const data = await response.json().catch(() => null);
 
     if (!response.ok) {
       const message =
         data?.error || data?.message || "The server could not process the request.";
+      console.error("API request failed", {
+        url: requestUrl,
+        status: response.status,
+        response: data
+      });
       throw new Error(message);
     }
 
     return data;
-  }
-
-  function saveApiBaseUrl(event) {
-    event.preventDefault();
-    const nextValue = apiBaseUrlInput.trim().replace(/\/+$/, "");
-    setApiBaseUrl(nextValue);
-    setShowApiSettings(false);
-  }
-
-  function resetApiBaseUrl() {
-    setApiBaseUrl("");
-    setApiBaseUrlInput("");
-    setShowApiSettings(false);
   }
 
   function queueNextPoll(campaignId) {
@@ -231,6 +190,7 @@ function App() {
         queueNextPoll(id);
       }
     } catch (error) {
+      console.error("Failed to fetch campaign status", error);
       setIsPolling(false);
       setMonitorState({
         loading: false,
@@ -255,6 +215,7 @@ function App() {
         data: result.data || []
       });
     } catch (error) {
+      console.error("Failed to fetch campaigns", error);
       setCampaignListState({
         loading: false,
         error: error.message,
@@ -286,6 +247,7 @@ function App() {
         response: result
       });
     } catch (error) {
+      console.error("Failed to send test message", error);
       setTestState({
         loading: false,
         error: error.message,
@@ -337,6 +299,7 @@ function App() {
       setMonitorId(result.campaignId);
       fetchCampaignStatus(result.campaignId, { keepPolling: true });
     } catch (error) {
+      console.error("Failed to start campaign", error);
       setCampaignState({
         loading: false,
         error: error.message,
@@ -470,13 +433,6 @@ function App() {
           <div className="topbar-actions">
             <button
               className="ghost-button"
-              onClick={() => setShowApiSettings((current) => !current)}
-              type="button"
-            >
-              API settings
-            </button>
-            <button
-              className="ghost-button"
               onClick={() => setActiveView(pageMeta.actionView)}
               type="button"
             >
@@ -484,43 +440,6 @@ function App() {
             </button>
           </div>
         </header>
-
-        {showApiSettings ? (
-          <section className="page-card settings-card">
-            <div className="panel-header">
-              <div>
-                <h3>API connection</h3>
-                <p className="panel-description">
-                  Leave this empty when the UI is served by the same backend. Set a full
-                  base URL only when the API is hosted elsewhere.
-                </p>
-              </div>
-              <span className="badge neutral">
-                {apiBaseUrl ? "Custom backend" : "Same origin"}
-              </span>
-            </div>
-
-            <form className="settings-form" onSubmit={saveApiBaseUrl}>
-              <label>
-                Backend base URL
-                <input
-                  value={apiBaseUrlInput}
-                  onChange={(event) => setApiBaseUrlInput(event.target.value)}
-                  placeholder="https://api.example.com"
-                />
-              </label>
-
-              <div className="settings-actions">
-                <button className="primary-button" type="submit">
-                  Save connection
-                </button>
-                <button className="ghost-button" onClick={resetApiBaseUrl} type="button">
-                  Use same origin
-                </button>
-              </div>
-            </form>
-          </section>
-        ) : null}
 
         <section className="hero-card compact-hero">
           <div className="hero-stats compact">
