@@ -1,20 +1,41 @@
+const fs = require("fs");
+const path = require("path");
 const { recordLead } = require("../services/leadService");
 const { updateTrackedMessageStatus } = require("../services/messageTrackingService");
 const { sendWhatsAppMessage } = require("../services/whatsappService");
+
+const logsDir = path.join(process.cwd(), "logs");
+const webhookLogFile = path.join(logsDir, "webhook.log");
+
+function logWebhookEvent(data) {
+  try {
+    if (!fs.existsSync(logsDir)) {
+      fs.mkdirSync(logsDir, { recursive: true });
+    }
+    const entry = `\n--- [${new Date().toISOString()}] ---\n${JSON.stringify(data, null, 2)}\n`;
+    fs.appendFileSync(webhookLogFile, entry, "utf8");
+  } catch (err) {
+    console.error("Failed to write to webhook.log:", err.message);
+  }
+}
 
 function verifyWebhook(req, res) {
   const mode = req.query["hub.mode"];
   const verifyToken = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
 
+  console.log(`[webhook verify] mode=${mode} token=${verifyToken}`);
+
   if (
     mode === "subscribe" &&
     verifyToken &&
     verifyToken === process.env.WEBHOOK_VERIFY_TOKEN
   ) {
+    console.log("✓ Webhook verification challenge accepted!");
     return res.status(200).send(challenge);
   }
 
+  console.warn("✗ Webhook verification failed. Check WEBHOOK_VERIFY_TOKEN.");
   return res.sendStatus(403);
 }
 
@@ -24,8 +45,12 @@ function receiveWebhook(req, res) {
   res.sendStatus(200);
 
   setImmediate(async () => {
-    console.log("Webhook received");
+    console.log("\n==================== WEBHOOK RECEIVED ====================");
     console.log(JSON.stringify(payload, null, 2));
+    console.log("==========================================================\n");
+
+    // Persist full payload to logs/webhook.log for easy inspection
+    logWebhookEvent(payload);
 
     const value = payload?.entry?.[0]?.changes?.[0]?.value;
 
@@ -86,9 +111,14 @@ function receiveWebhook(req, res) {
         const status = statusEvent?.status || "unknown";
         const recipientId = statusEvent?.recipient_id || "unknown";
 
-        console.log(`Message ID: ${messageId}`);
-        console.log(`Status: ${status}`);
-        console.log(`Recipient: ${recipientId}`);
+        console.log(`[status update] message_id=${messageId} status=${status} recipient=${recipientId}`);
+
+        if (statusEvent?.errors && statusEvent.errors.length > 0) {
+          console.error(
+            `\n🚨 [META DELIVERY FAILURE for ${recipientId}]:\n`,
+            JSON.stringify(statusEvent.errors, null, 2)
+          );
+        }
 
         try {
           const trackedMessage = await updateTrackedMessageStatus({
@@ -113,5 +143,6 @@ function receiveWebhook(req, res) {
 
 module.exports = {
   verifyWebhook,
-  receiveWebhook
+  receiveWebhook,
+  webhookLogFile
 };
