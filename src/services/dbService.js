@@ -66,6 +66,14 @@ function initDatabase() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (message_id) REFERENCES messages(id)
       );
+
+      CREATE TABLE IF NOT EXISTS leads (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        phone TEXT,
+        trigger_message TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
     `);
 
     ensureColumnExists("campaigns", "queued", "INTEGER DEFAULT 0");

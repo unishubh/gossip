@@ -7,6 +7,7 @@ const path = require("path");
 const campaignRouter = require("./routes/campaign");
 const sendTestRouter = require("./routes/sendTest");
 const webhookRouter = require("./routes/webhook.routes");
+const leadsRouter = require("./routes/leads");
 
 const app = express();
 const frontendDistPath = path.join(process.cwd(), "frontend", "dist");
@@ -45,6 +46,7 @@ app.get("/", (req, res) => {
 app.use("/campaign", campaignRouter);
 app.use("/send-test", sendTestRouter);
 app.use("/webhook", webhookRouter);
+app.use("/leads", leadsRouter);
 
 if (fs.existsSync(frontendDistPath)) {
   app.use(express.static(frontendDistPath));
@@ -54,7 +56,8 @@ if (fs.existsSync(frontendDistPath)) {
       req.path === "/" ||
       req.path.startsWith("/campaign") ||
       req.path.startsWith("/send-test") ||
-      req.path.startsWith("/webhook")
+      req.path.startsWith("/webhook") ||
+      req.path.startsWith("/leads")
     ) {
       return next();
     }

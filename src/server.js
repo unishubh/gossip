@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const app = require("./app");
 const { initDatabase } = require("./services/dbService");
+const { ensureLeadsCsvFile } = require("./services/leadService");
 
 const PORT = process.env.PORT || 3000;
 const requiredEnvVars = [
@@ -19,6 +20,7 @@ if (missingEnvVars.length > 0) {
 }
 
 initDatabase();
+ensureLeadsCsvFile();
 
 app.listen(PORT, () => {
   console.log(`Server running on ${PORT}`);
